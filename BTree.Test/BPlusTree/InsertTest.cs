@@ -1,12 +1,15 @@
-﻿using System.Collections;
+﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using BTree.Test;
 
-namespace BTree.Test.BPlusTree;
+namespace BTree.BPlusTree.Test;
 
 public class InsertTest
 {
-    [TestCaseSource(typeof(InsertTest), nameof(TestCases))]
-    public void Insert(ushort degree, int count, bool reverseOrder, bool randomOrder, bool withUpdate)
+    [Test]
+    [MethodDataSource(nameof(GetTestCases))]
+    public async Task Insert(ushort degree, int count, bool reverseOrder, bool randomOrder, bool withUpdate)
     {
         Ref<int>[] items = Enumerable.Range(0, count).Select(x => new Ref<int>(x)).ToArray();
         items = reverseOrder ? items.Reverse().ToArray() : items;
@@ -17,20 +20,20 @@ public class InsertTest
         BPlusTree<Ref<int>, Ref<int>> tree = new(degree);
 
         int currentExpectedCount = 0;
-        Assert.That(tree.Count, Is.EqualTo(currentExpectedCount));
+        await Assert.That(tree.Count).IsEqualTo(currentExpectedCount);
 
         foreach (Ref<int> item in items)
         {
             bool updated = tree.InsertOrUpdate(item, item);
 
-            Assert.That(updated, Is.EqualTo(false));
+            await Assert.That(updated).IsFalse();
 
             currentExpectedCount++;
 
-            Assert.That(tree.Count, Is.EqualTo(currentExpectedCount));
+            await Assert.That(tree.Count).IsEqualTo(currentExpectedCount);
         }
 
-        Assert.That(tree.Count, Is.EqualTo(count));
+        await Assert.That(tree.Count).IsEqualTo(count);
 
         items.Shuffle();
 
@@ -38,7 +41,7 @@ public class InsertTest
         {
             bool getResult = tree.Contains(item);
 
-            Assert.That(getResult, Is.EqualTo(true));
+            await Assert.That(getResult).IsTrue();
         }
 
         if (withUpdate)
@@ -49,12 +52,12 @@ public class InsertTest
             {
                 bool updated = tree.InsertOrUpdate(item, item);
 
-                Assert.That(updated, Is.EqualTo(true));
+                await Assert.That(updated).IsTrue();
 
-                Assert.That(tree.Count, Is.EqualTo(count));
+                await Assert.That(tree.Count).IsEqualTo(count);
             }
 
-            Assert.That(tree.Count, Is.EqualTo(count));
+            await Assert.That(tree.Count).IsEqualTo(count);
 
             items.Shuffle();
 
@@ -62,33 +65,30 @@ public class InsertTest
             {
                 bool getResult = tree.Contains(item);
 
-                Assert.That(getResult, Is.EqualTo(true));
+                await Assert.That(getResult).IsTrue();
             }
         }
     }
 
-    public static IEnumerable TestCases
+    public static IEnumerable<object[]> GetTestCases()
     {
-        get
-        {
-            ushort[] degrees = [3, 4, 5, 6];
-            int[] counts = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 90, 900];
-            bool[] reverseOrders = [false, true];
-            bool[] randomOrders = [false, true];
-            bool[] withUpdates = [false, true];
+        ushort[] degrees = [3, 4, 5, 6];
+        int[] counts = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 90, 900];
+        bool[] reverseOrders = [false, true];
+        bool[] randomOrders = [false, true];
+        bool[] withUpdates = [false, true];
 
-            foreach (ushort degree in degrees)
+        foreach (ushort degree in degrees)
+        {
+            foreach (int count in counts)
             {
-                foreach (int count in counts)
+                foreach (bool reverseOrder in reverseOrders)
                 {
-                    foreach (bool reverseOrder in reverseOrders)
+                    foreach (bool randomOrder in randomOrders)
                     {
-                        foreach (bool randomOrder in randomOrders)
+                        foreach (bool withUpdate in withUpdates)
                         {
-                            foreach (bool withUpdate in withUpdates)
-                            {
-                                yield return new TestCaseData(degree, count, reverseOrder, randomOrder, withUpdate);
-                            }
+                            yield return new object[] { degree, count, reverseOrder, randomOrder, withUpdate };
                         }
                     }
                 }

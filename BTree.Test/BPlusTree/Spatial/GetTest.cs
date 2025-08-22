@@ -1,16 +1,16 @@
-﻿using BTree.Test.BTree.Spatial;
-using NUnit.Framework.Legacy;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using BTree.Spatial.Test;
 
-namespace BTree.Test.BPlusTree.Spatial;
+namespace BTree.BPlusTree.Spatial.Test;
 
 public class GetTest
 {
-    [TestCaseSource(typeof(GetTest), nameof(TestCases))]
-    public void GetRange(bool zOrder, int count, Pattern xPattern, Pattern yPattern, int seed, double? lowerLimitShareX, double? lowerLimitShareY, double? upperLimitShareX, double? upperLimitShareY)
+    [Test]
+    [MethodDataSource(nameof(GetTestCases))]
+    public async Task GetRange(bool zOrder, int count, Pattern xPattern, Pattern yPattern, int seed, double? lowerLimitShareX, double? lowerLimitShareY, double? upperLimitShareX, double? upperLimitShareY)
     {
         Random random = new(seed);
 
@@ -64,56 +64,53 @@ public class GetTest
         expectedRange.Sort((left, right) => left.X < right.X ? -1 : left.X > right.X ? 1 : left.Y < right.Y ? -1 : left.Y > right.Y ? 1 : 0);
         actualRange.Sort((left, right) => left.X < right.X ? -1 : left.X > right.X ? 1 : left.Y < right.Y ? -1 : left.Y > right.Y ? 1 : 0);
 
-        CollectionAssert.AreEqual(expectedRange, actualRange);
+        await Assert.That(actualRange).IsEquivalentTo(expectedRange);
     }
 
-    public static IEnumerable TestCases
+    public static IEnumerable<object[]> GetTestCases()
     {
-        get
+        bool[] zOrders = [false, true];
+        int[] counts = [10, 500];
+        Pattern[] patterns = [
+            Pattern.Random,
+            Pattern.Const,
+        ];
+        int[] seeds = [0, 1];
+        double?[] limitShares = [null, -1.0, 0.0, 0.5, 1.0, 2.0];
+
+        foreach (bool zOrder in zOrders)
         {
-            bool[] zOrders = [false, true];
-            int[] counts = [10, 500];
-            Pattern[] patterns = [
-                Pattern.Random,
-                Pattern.Const,
-            ];
-            int[] seeds = [0, 1];
-            double?[] limitShares = [null, -1.0, 0.0, 0.5, 1.0, 2.0];
-
-            foreach (bool zOrder in zOrders)
+            foreach (int count in counts)
             {
-                foreach (int count in counts)
+                foreach (Pattern xPattern in patterns)
                 {
-                    foreach (Pattern xPattern in patterns)
+                    foreach (Pattern yPattern in patterns)
                     {
-                        foreach (Pattern yPattern in patterns)
+                        for (int i = 0; i < seeds.Length; i++)
                         {
-                            for (int i = 0; i < seeds.Length; i++)
+                            if (xPattern != Pattern.Random && yPattern != Pattern.Random && i > 0)
                             {
-                                if (xPattern != Pattern.Random && yPattern != Pattern.Random && i > 0)
+                                continue;
+                            }
+                            foreach (double? lowerLimitShareX in limitShares)
+                            {
+                                foreach (double? lowerLimitShareY in limitShares)
                                 {
-                                    continue;
-                                }
-                                foreach (double? lowerLimitShareX in limitShares)
-                                {
-                                    foreach (double? lowerLimitShareY in limitShares)
+                                    if (lowerLimitShareY is null)
                                     {
-                                        if (lowerLimitShareY is null)
-                                        {
-                                            continue;
-                                        }
+                                        continue;
+                                    }
 
-                                        foreach (double? upperLimitShareX in limitShares)
+                                    foreach (double? upperLimitShareX in limitShares)
+                                    {
+                                        foreach (double? upperLimitShareY in limitShares)
                                         {
-                                            foreach (double? upperLimitShareY in limitShares)
+                                            if (upperLimitShareY is null)
                                             {
-                                                if (upperLimitShareY is null)
-                                                {
-                                                    continue;
-                                                }
-
-                                                yield return new TestCaseData(zOrder, count, xPattern, yPattern, seeds[i], lowerLimitShareX, lowerLimitShareY, upperLimitShareX, upperLimitShareY);
+                                                continue;
                                             }
+
+                                            yield return new object[] { zOrder, count, xPattern, yPattern, seeds[i], lowerLimitShareX, lowerLimitShareY, upperLimitShareX, upperLimitShareY };
                                         }
                                     }
                                 }
@@ -122,7 +119,7 @@ public class GetTest
                     }
                 }
             }
-
         }
+
     }
 }

@@ -2,8 +2,7 @@
 
 BTree offers a simple and high performant implementation of a BTree and a B+Tree (BPlusTree) for C# and .NET.
 
-
-<img src="https://github.com/CodeDevAM/BTree/blob/main/icon.jpeg" width="256" height="256"/>
+![icon](https://raw.githubusercontent.com/DevAM-Tools/BTree/main/icon.png)
 
 ## Usage
 Items of type `T` that shall be stored in the `BTree<T>` must implement the interface `IComparable<T>`. In this case the usage is straight forward.

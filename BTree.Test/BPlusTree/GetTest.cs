@@ -1,14 +1,15 @@
-﻿using NUnit.Framework.Legacy;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using BTree.Test;
 
-namespace BTree.Test.BPlusTree;
+namespace BTree.BPlusTree.Test;
 
 public class GetTest
 {
-    [TestCaseSource(typeof(GetTest), nameof(TestCases))]
-    public void Get(ushort degree, int count, int? minItem, int? maxItem)
+    [Test]
+    [MethodDataSource(nameof(GetTestCases))]
+    public async Task Get(ushort degree, int count, int? minItem, int? maxItem)
     {
         Ref<int>[] orderedItems = Enumerable.Range(0, count).Select(x => new Ref<int>(x)).ToArray();
         Ref<int>[] items = orderedItems.ToArray();
@@ -25,31 +26,32 @@ public class GetTest
             currentMinItem = currentMinItem == null || item < currentMinItem ? item : currentMinItem;
             bool getMinResult = tree.GetMin(out KeyValuePair<Ref<int>, Ref<int>> retrievedMinItem);
 
-            Assert.That(getMinResult, Is.EqualTo(true));
-            Assert.That(retrievedMinItem.Key, Is.EqualTo(currentMinItem));
-            Assert.That(retrievedMinItem.Value, Is.EqualTo(currentMinItem));
+            await Assert.That(getMinResult).IsTrue();
+            await Assert.That(retrievedMinItem.Key).IsEqualTo(currentMinItem);
+            await Assert.That(retrievedMinItem.Value).IsEqualTo(currentMinItem);
 
             currentMaxItem = currentMaxItem == null || item > currentMaxItem ? item : currentMaxItem;
             bool getMaxResult = tree.GetMax(out KeyValuePair<Ref<int>, Ref<int>> retrievedMaxItem);
 
-            Assert.That(getMaxResult, Is.EqualTo(true));
-            Assert.That(retrievedMaxItem.Key, Is.EqualTo(currentMaxItem));
-            Assert.That(retrievedMaxItem.Value, Is.EqualTo(currentMaxItem));
+            await Assert.That(getMaxResult).IsTrue();
+            await Assert.That(retrievedMaxItem.Key).IsEqualTo(currentMaxItem);
+            await Assert.That(retrievedMaxItem.Value).IsEqualTo(currentMaxItem);
         }
 
         foreach (Ref<int> item in items)
         {
             bool getResult = tree.Get(item, out Ref<int> existingItem);
 
-            Assert.That(getResult, Is.EqualTo(true));
-            Assert.That(existingItem, Is.EqualTo(item));
+            await Assert.That(getResult).IsTrue();
+            await Assert.That(existingItem).IsEqualTo(item);
         }
 
-        Assert.That(tree.Count, Is.EqualTo(count));
+        await Assert.That(tree.Count).IsEqualTo(count);
     }
 
-    [TestCaseSource(typeof(GetTest), nameof(TestCases))]
-    public void GetRange(ushort degree, int count, int? minItem, int? maxItem)
+    [Test]
+    [MethodDataSource(nameof(GetTestCases))]
+    public async Task GetRange(ushort degree, int count, int? minItem, int? maxItem)
     {
         Ref<int>[] orderedItems = Enumerable.Range(0, count).Select(x => new Ref<int>(x)).ToArray();
         Ref<int>[] items = orderedItems.ToArray();
@@ -66,7 +68,7 @@ public class GetTest
 
         KeyValuePair<Ref<int>, Ref<int>>[] expectedSequence = orderedItems.Select(x => new KeyValuePair<Ref<int>, Ref<int>>(x, x)).ToArray();
         KeyValuePair<Ref<int>, Ref<int>>[] actualSequence = tree.GetAll().ToArray();
-        CollectionAssert.AreEqual(expectedSequence, actualSequence);
+        await Assert.That(actualSequence).IsEquivalentTo(expectedSequence);
 
         List<KeyValuePair<Ref<int>, Ref<int>>> actualList = [];
         bool canceled = tree.DoForEach((key, item) =>
@@ -74,8 +76,8 @@ public class GetTest
             actualList.Add(new KeyValuePair<Ref<int>, Ref<int>>(key, item));
             return false;
         });
-        CollectionAssert.AreEqual(expectedSequence, actualList);
-        Assert.That(canceled, Is.EqualTo(false));
+        await Assert.That(actualList).IsEquivalentTo(expectedSequence);
+        await Assert.That(canceled).IsFalse();
 
         // inclusive max
         KeyValuePair<Ref<int>, Ref<int>>[] expectedRangeSequence = orderedItems
@@ -83,7 +85,7 @@ public class GetTest
             .Select(x => new KeyValuePair<Ref<int>, Ref<int>>(x, x))
             .ToArray();
         KeyValuePair<Ref<int>, Ref<int>>[] actualRangeSequence = tree.GetRange(lowerLimit, upperLimit, true).ToArray();
-        CollectionAssert.AreEqual(expectedRangeSequence, actualRangeSequence);
+        await Assert.That(actualRangeSequence).IsEquivalentTo(expectedRangeSequence);
 
         List<KeyValuePair<Ref<int>, Ref<int>>> actualRangeList = [];
         canceled = tree.DoForEach((key, item) =>
@@ -91,8 +93,8 @@ public class GetTest
             actualRangeList.Add(new(key, item));
             return false;
         }, lowerLimit, upperLimit, true);
-        CollectionAssert.AreEqual(expectedRangeSequence, actualRangeList);
-        Assert.That(canceled, Is.EqualTo(false));
+        await Assert.That(actualRangeList).IsEquivalentTo(expectedRangeSequence);
+        await Assert.That(canceled).IsFalse();
 
         expectedRangeSequence = expectedRangeSequence.Take(1).ToArray();
         actualRangeList = [];
@@ -102,8 +104,8 @@ public class GetTest
             return true;
         }, lowerLimit, upperLimit, true);
 
-        CollectionAssert.AreEqual(expectedRangeSequence, actualRangeList);
-        Assert.That(canceled, Is.EqualTo(expectedRangeSequence.Length > 0 ? true : false));
+        await Assert.That(actualRangeList).IsEquivalentTo(expectedRangeSequence);
+        await Assert.That(canceled).IsEqualTo(expectedRangeSequence.Length > 0 ? true : false);
 
         // exclusive max
         expectedRangeSequence = orderedItems
@@ -111,7 +113,7 @@ public class GetTest
             .Select(x => new KeyValuePair<Ref<int>, Ref<int>>(x, x))
             .ToArray();
         actualRangeSequence = tree.GetRange(lowerLimit, upperLimit, false).ToArray();
-        CollectionAssert.AreEqual(expectedRangeSequence, actualRangeSequence);
+        await Assert.That(actualRangeSequence).IsEquivalentTo(expectedRangeSequence);
 
         actualRangeList = [];
         canceled = tree.DoForEach((key, item) =>
@@ -119,8 +121,8 @@ public class GetTest
             actualRangeList.Add(new(key, item));
             return false;
         }, lowerLimit, upperLimit, false);
-        CollectionAssert.AreEqual(expectedRangeSequence, actualRangeList);
-        Assert.That(canceled, Is.EqualTo(false));
+        await Assert.That(actualRangeList).IsEquivalentTo(expectedRangeSequence);
+        await Assert.That(canceled).IsFalse();
 
         expectedRangeSequence = expectedRangeSequence.Take(1).ToArray();
         actualRangeList = [];
@@ -130,12 +132,13 @@ public class GetTest
             return true;
         }, lowerLimit, upperLimit, false);
 
-        CollectionAssert.AreEqual(expectedRangeSequence, actualRangeList);
-        Assert.That(canceled, Is.EqualTo(expectedRangeSequence.Length > 0 ? true : false));
+        await Assert.That(actualRangeList).IsEquivalentTo(expectedRangeSequence);
+        await Assert.That(canceled).IsEqualTo(expectedRangeSequence.Length > 0 ? true : false);
     }
 
-    [TestCaseSource(typeof(GetTest), nameof(TestCases))]
-    public void GetNearest(ushort degree, int count, int? minItem, int? maxItem)
+    [Test]
+    [MethodDataSource(nameof(GetTestCases))]
+    public async Task GetNearest(ushort degree, int count, int? minItem, int? maxItem)
     {
         Ref<int>[] orderedItems = Enumerable.Range(1, count).Select(x => new Ref<int>(x * 10)).ToArray();
         Ref<int>[] items = orderedItems.ToArray();
@@ -150,11 +153,11 @@ public class GetTest
         foreach (Ref<int> item in items)
         {
             BPlusTree<Ref<int>, Ref<int>>.NearestItems nearestItems = tree.GetNearest(item);
-            Assert.That(nearestItems.Lower.HasValue, Is.EqualTo(false));
-            Assert.That(nearestItems.Upper.HasValue, Is.EqualTo(false));
-            Assert.That(nearestItems.Match.HasValue, Is.EqualTo(true));
-            Assert.That(nearestItems.Match.Value.Key, Is.EqualTo(item));
-            Assert.That(nearestItems.Match.Value.Value, Is.EqualTo(item));
+            await Assert.That(nearestItems.Lower.HasValue).IsFalse();
+            await Assert.That(nearestItems.Upper.HasValue).IsFalse();
+            await Assert.That(nearestItems.Match.HasValue).IsTrue();
+            await Assert.That(nearestItems.Match.Value.Key).IsEqualTo(item);
+            await Assert.That(nearestItems.Match.Value.Value).IsEqualTo(item);
         }
 
         Ref<int>[] keys = Enumerable.Range(0, 10 * (count + 1) + 1).Select(x => new Ref<int>(x)).ToArray();
@@ -166,65 +169,62 @@ public class GetTest
 
             if (key.CompareTo(10) < 0) // only upper
             {
-                Assert.That(nearestItems.Match.HasValue, Is.EqualTo(false));
-                Assert.That(nearestItems.Lower.HasValue, Is.EqualTo(false));
-                Assert.That(nearestItems.Upper.HasValue, Is.EqualTo(true));
-                Assert.That(nearestItems.Upper.Value.Key, Is.EqualTo(new Ref<int>(10)));
-                Assert.That(nearestItems.Upper.Value.Value, Is.EqualTo(new Ref<int>(10)));
+                await Assert.That(nearestItems.Match.HasValue).IsFalse();
+                await Assert.That(nearestItems.Lower.HasValue).IsFalse();
+                await Assert.That(nearestItems.Upper.HasValue).IsTrue();
+                await Assert.That(nearestItems.Upper.Value.Key).IsEqualTo(new Ref<int>(10));
+                await Assert.That(nearestItems.Upper.Value.Value).IsEqualTo(new Ref<int>(10));
             }
             else if (key.CompareTo(count * 10) > 0) // only lower
             {
-                Assert.That(nearestItems.Match.HasValue, Is.EqualTo(false));
-                Assert.That(nearestItems.Lower.HasValue, Is.EqualTo(true));
-                Assert.That(nearestItems.Lower.Value.Key, Is.EqualTo(new Ref<int>(count * 10)));
-                Assert.That(nearestItems.Lower.Value.Value, Is.EqualTo(new Ref<int>(count * 10)));
-                Assert.That(nearestItems.Upper.HasValue, Is.EqualTo(false));
+                await Assert.That(nearestItems.Match.HasValue).IsFalse();
+                await Assert.That(nearestItems.Lower.HasValue).IsTrue();
+                await Assert.That(nearestItems.Lower.Value.Key).IsEqualTo(new Ref<int>(count * 10));
+                await Assert.That(nearestItems.Lower.Value.Value).IsEqualTo(new Ref<int>(count * 10));
+                await Assert.That(nearestItems.Upper.HasValue).IsFalse();
             }
             else if (key.Value % 10 == 0) // match
             {
-                Assert.That(nearestItems.Lower.HasValue, Is.EqualTo(false));
-                Assert.That(nearestItems.Upper.HasValue, Is.EqualTo(false));
-                Assert.That(nearestItems.Match.HasValue, Is.EqualTo(true));
-                Assert.That(nearestItems.Match.Value.Key, Is.EqualTo(key));
-                Assert.That(nearestItems.Match.Value.Value, Is.EqualTo(key));
+                await Assert.That(nearestItems.Lower.HasValue).IsFalse();
+                await Assert.That(nearestItems.Upper.HasValue).IsFalse();
+                await Assert.That(nearestItems.Match.HasValue).IsTrue();
+                await Assert.That(nearestItems.Match.Value.Key).IsEqualTo(key);
+                await Assert.That(nearestItems.Match.Value.Value).IsEqualTo(key);
             }
             else // between
             {
                 Ref<int> expectedMinItem = (key / 10) * 10;
                 Ref<int> expectedMaxItem = ((key / 10) + 1) * 10;
 
-                Assert.That(nearestItems.Match.HasValue, Is.EqualTo(false));
-                Assert.That(nearestItems.Lower.HasValue, Is.EqualTo(true));
-                Assert.That(nearestItems.Lower.Value.Key, Is.EqualTo(expectedMinItem));
-                Assert.That(nearestItems.Lower.Value.Value, Is.EqualTo(expectedMinItem));
-                Assert.That(nearestItems.Upper.HasValue, Is.EqualTo(true));
-                Assert.That(nearestItems.Upper.Value.Key, Is.EqualTo(expectedMaxItem));
-                Assert.That(nearestItems.Upper.Value.Value, Is.EqualTo(expectedMaxItem));
+                await Assert.That(nearestItems.Match.HasValue).IsFalse();
+                await Assert.That(nearestItems.Lower.HasValue).IsTrue();
+                await Assert.That(nearestItems.Lower.Value.Key).IsEqualTo(expectedMinItem);
+                await Assert.That(nearestItems.Lower.Value.Value).IsEqualTo(expectedMinItem);
+                await Assert.That(nearestItems.Upper.HasValue).IsTrue();
+                await Assert.That(nearestItems.Upper.Value.Key).IsEqualTo(expectedMaxItem);
+                await Assert.That(nearestItems.Upper.Value.Value).IsEqualTo(expectedMaxItem);
             }
 
         }
     }
 
-    public static IEnumerable TestCases
+    public static IEnumerable<object[]> GetTestCases()
     {
-        get
+        ushort[] degrees = [3, 4, 5, 6];
+        int[] counts = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 90, 900];
+
+        foreach (ushort degree in degrees)
         {
-            ushort[] degrees = [3, 4, 5, 6];
-            int[] counts = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 90, 900];
-
-            foreach (ushort degree in degrees)
+            foreach (int count in counts)
             {
-                foreach (int count in counts)
-                {
-                    int?[] minKeys = [null, 0, count, count / 2, count / 4];
-                    int?[] maxKeys = [null, 0, count, count / 2, count / 4];
+                int?[] minKeys = [null, 0, count, count / 2, count / 4];
+                int?[] maxKeys = [null, 0, count, count / 2, count / 4];
 
-                    foreach (int? minKey in minKeys)
+                foreach (int? minKey in minKeys)
+                {
+                    foreach (int? maxKey in maxKeys)
                     {
-                        foreach (int? maxKey in maxKeys)
-                        {
-                            yield return new TestCaseData(degree, count, minKey, maxKey);
-                        }
+                        yield return new object[] { degree, count, minKey, maxKey };
                     }
                 }
             }

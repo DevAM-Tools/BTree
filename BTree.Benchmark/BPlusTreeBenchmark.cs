@@ -1,5 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
-using BTree.Test.BTree.Spatial;
+using BTree.Spatial.Test;
 using System;
 using System.Linq;
 

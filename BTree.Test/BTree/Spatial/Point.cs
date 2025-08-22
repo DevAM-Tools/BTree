@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace BTree.Test.BTree.Spatial;
+namespace BTree.Spatial.Test;
 
 public record struct Point(double X, double Y, bool ZOrder) : IComparable<Point>
 {

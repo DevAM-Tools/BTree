@@ -1,15 +1,16 @@
-﻿using BTree.Test.BTree.Spatial;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using BTree.Spatial.Test;
 
-namespace BTree.Test.BPlusTree.Spatial;
+namespace BTree.BPlusTree.Spatial.Test;
 
 public class InsertTest
 {
-    [TestCaseSource(typeof(InsertTest), nameof(TestCases))]
-    public void Insert(bool zOrder, int count, Pattern xPattern, Pattern yPattern, int seed)
+    [Test]
+    [MethodDataSource(nameof(GetTestCases))]
+    public async Task Insert(bool zOrder, int count, Pattern xPattern, Pattern yPattern, int seed)
     {
         Random random = new(seed);
 
@@ -36,9 +37,9 @@ public class InsertTest
             bool updated = tree.InsertOrUpdate(point, false);
             bool seenPointsAdded = seenPoints.Add(point);
 
-            Assert.That(updated, Is.EqualTo(!seenPointsAdded));
+            await Assert.That(updated).IsEqualTo(!seenPointsAdded);
 
-            Assert.That(tree.Count, Is.EqualTo(seenPoints.Count));
+            await Assert.That(tree.Count).IsEqualTo(seenPoints.Count);
 
             bool found = tree.Contains(point);
             if (found == false)
@@ -46,7 +47,7 @@ public class InsertTest
                 // Placeholder for a breakpoint and debugging
                 found = tree.Contains(point);
             }
-            Assert.That(found, Is.EqualTo(true));
+            await Assert.That(found).IsTrue();
         }
 
         foreach (Point point in points)
@@ -57,55 +58,52 @@ public class InsertTest
                 // Placeholder for a breakpoint and debugging
                 found = tree.Contains(point);
             }
-            Assert.That(found, Is.EqualTo(true));
+            await Assert.That(found).IsTrue();
         }
     }
 
-    public static IEnumerable TestCases
+    public static IEnumerable<object[]> GetTestCases()
     {
-        get
+        bool[] zOrders = [false, true];
+        int[] counts = [2, 5, 10, 20, 50, 100, 200, 500];
+        Pattern[] patterns = [
+            Pattern.Increasing,
+            Pattern.LowerHalfIncreasing,
+            Pattern.UpperHalfIncreasing,
+            Pattern.Decreasing,
+            Pattern.LowerHalfDecreasing,
+            Pattern.UpperHalfDecreasing,
+            Pattern.Random,
+            Pattern.Const,
+            Pattern.Alternating,
+            Pattern.ReverseAlternating,
+        ];
+        int[] seeds = [0, 1, 2];
+
+        foreach (bool zOrder in zOrders)
         {
-            bool[] zOrders = [false, true];
-            int[] counts = [2, 5, 10, 20, 50, 100, 200, 500];
-            Pattern[] patterns = [
-                Pattern.Increasing,
-                Pattern.LowerHalfIncreasing,
-                Pattern.UpperHalfIncreasing,
-                Pattern.Decreasing,
-                Pattern.LowerHalfDecreasing,
-                Pattern.UpperHalfDecreasing,
-                Pattern.Random,
-                Pattern.Const,
-                Pattern.Alternating,
-                Pattern.ReverseAlternating,
-            ];
-            int[] seeds = [0, 1, 2];
-
-            foreach (bool zOrder in zOrders)
+            foreach (int count in counts)
             {
-                foreach (int count in counts)
+                foreach (Pattern xPattern in patterns)
                 {
-                    foreach (Pattern xPattern in patterns)
+                    foreach (Pattern yPattern in patterns)
                     {
-                        foreach (Pattern yPattern in patterns)
+                        if (xPattern == Pattern.Random || yPattern == Pattern.Random)
                         {
-                            if (xPattern == Pattern.Random || yPattern == Pattern.Random)
+                            foreach (int seed in seeds)
                             {
-                                foreach (int seed in seeds)
-                                {
-                                    yield return new TestCaseData(zOrder, count, xPattern, yPattern, seed);
-                                }
+                                yield return new object[] { zOrder, count, xPattern, yPattern, seed };
                             }
-                            else
-                            {
-                                yield return new TestCaseData(zOrder, count, xPattern, yPattern, -1);
-                            }
-
                         }
+                        else
+                        {
+                            yield return new object[] { zOrder, count, xPattern, yPattern, -1 };
+                        }
+
                     }
                 }
             }
-
         }
+
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace BTree.Test.BTree.Spatial;
+﻿namespace BTree.Spatial.Test;
 
 public enum Pattern
 {

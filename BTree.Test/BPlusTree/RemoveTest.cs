@@ -1,13 +1,15 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using BTree.Test;
 
-namespace BTree.Test.BPlusTree;
+namespace BTree.BPlusTree.Test;
 
 public class RemoveTest
 {
-    [TestCaseSource(typeof(RemoveTest), nameof(TestCases))]
-    public void Remove(ushort degree, int count, bool reverseOrder, bool randomOrder)
+    [Test]
+    [MethodDataSource(nameof(GetTestCases))]
+    public async Task Remove(ushort degree, int count, bool reverseOrder, bool randomOrder)
     {
         Ref<int>[] items = Enumerable.Range(0, count).Select(x => new Ref<int>(x)).ToArray();
         items = reverseOrder ? items.Reverse().ToArray() : items;
@@ -25,7 +27,7 @@ public class RemoveTest
             tree.InsertOrUpdate(item, item);
         }
 
-        Assert.That(tree.Count, Is.EqualTo(count));
+        await Assert.That(tree.Count).IsEqualTo(count);
 
         int currentExpectedCount = count;
 
@@ -33,37 +35,38 @@ public class RemoveTest
         {
             bool removeResult = tree.Remove(item, out Ref<int> existingItem);
 
-            Assert.That(removeResult, Is.EqualTo(true));
+            await Assert.That(removeResult).IsTrue();
 
-            Assert.That(existingItem, Is.EqualTo(item));
+            await Assert.That(existingItem).IsEqualTo(item);
 
             currentExpectedCount--;
-            Assert.That(tree.Count, Is.EqualTo(currentExpectedCount));
+            await Assert.That(tree.Count).IsEqualTo(currentExpectedCount);
 
             tree.InsertOrUpdate(item, item);
 
             bool getResult = tree.Get(item, out Ref<int> existingValue);
 
-            Assert.That(getResult, Is.EqualTo(true));
+            await Assert.That(getResult).IsTrue();
 
-            Assert.That(existingValue, Is.EqualTo(item));
+            await Assert.That(existingValue).IsEqualTo(item);
 
             removeResult = tree.Remove(item, out existingItem);
 
-            Assert.That(removeResult, Is.EqualTo(true));
+            await Assert.That(removeResult).IsTrue();
 
-            Assert.That(existingItem, Is.EqualTo(item));
+            await Assert.That(existingItem).IsEqualTo(item);
 
-            Assert.That(tree.Count, Is.EqualTo(currentExpectedCount));
+            await Assert.That(tree.Count).IsEqualTo(currentExpectedCount);
 
             getResult = tree.Get(item, out _);
 
-            Assert.That(getResult, Is.EqualTo(false));
+            await Assert.That(getResult).IsFalse();
         }
     }
 
-    [TestCaseSource(typeof(RemoveTest), nameof(TestCases))]
-    public void RemoveMax(ushort degree, int count, bool reverseOrder, bool randomOrder)
+    [Test]
+    [MethodDataSource(nameof(GetTestCases))]
+    public async Task RemoveMax(ushort degree, int count, bool reverseOrder, bool randomOrder)
     {
         Ref<int>[] items = Enumerable.Range(0, count).Select(x => new Ref<int>(x)).ToArray();
         items = reverseOrder ? items.Reverse().ToArray() : items;
@@ -77,7 +80,7 @@ public class RemoveTest
         BPlusTree<Ref<int>, Ref<int>> tree = new(degree);
 
         int currentExpectedCount = 0;
-        Assert.That(tree.Count, Is.EqualTo(currentExpectedCount));
+        await Assert.That(tree.Count).IsEqualTo(currentExpectedCount);
 
         foreach (Ref<int> item in items)
         {
@@ -85,10 +88,10 @@ public class RemoveTest
 
             currentExpectedCount++;
 
-            Assert.That(tree.Count, Is.EqualTo(currentExpectedCount));
+            await Assert.That(tree.Count).IsEqualTo(currentExpectedCount);
         }
 
-        Assert.That(tree.Count, Is.EqualTo(count));
+        await Assert.That(tree.Count).IsEqualTo(count);
 
         currentExpectedCount = count;
 
@@ -97,19 +100,20 @@ public class RemoveTest
             currentExpectedCount--;
 
             bool removeResult = tree.RemoveMax(out KeyValuePair<Ref<int>, Ref<int>> max);
-            Assert.That(removeResult, Is.EqualTo(true));
-            Assert.That(tree.Count, Is.EqualTo(currentExpectedCount));
-            Assert.That(max.Key, Is.EqualTo(new Ref<int>(currentExpectedCount)));
-            Assert.That(max.Value, Is.EqualTo(new Ref<int>(currentExpectedCount)));
+            await Assert.That(removeResult).IsTrue();
+            await Assert.That(tree.Count).IsEqualTo(currentExpectedCount);
+            await Assert.That(max.Key).IsEqualTo(new Ref<int>(currentExpectedCount));
+            await Assert.That(max.Value).IsEqualTo(new Ref<int>(currentExpectedCount));
 
             bool getResult = tree.Get(max.Key, out Ref<int> _);
 
-            Assert.That(getResult, Is.EqualTo(false));
+            await Assert.That(getResult).IsFalse();
         }
     }
 
-    [TestCaseSource(typeof(RemoveTest), nameof(TestCases))]
-    public void RemoveMin(ushort degree, int count, bool reverseOrder, bool randomOrder)
+    [Test]
+    [MethodDataSource(nameof(GetTestCases))]
+    public async Task RemoveMin(ushort degree, int count, bool reverseOrder, bool randomOrder)
     {
         Ref<int>[] items = Enumerable.Range(0, count).Select(x => new Ref<int>(x)).ToArray();
         items = reverseOrder ? items.Reverse().ToArray() : items;
@@ -123,7 +127,7 @@ public class RemoveTest
         BPlusTree<Ref<int>, Ref<int>> tree = new(degree);
 
         int currentExpectedCount = 0;
-        Assert.That(tree.Count, Is.EqualTo(currentExpectedCount));
+        await Assert.That(tree.Count).IsEqualTo(currentExpectedCount);
 
         foreach (Ref<int> item in items)
         {
@@ -131,10 +135,10 @@ public class RemoveTest
 
             currentExpectedCount++;
 
-            Assert.That(tree.Count, Is.EqualTo(currentExpectedCount));
+            await Assert.That(tree.Count).IsEqualTo(currentExpectedCount);
         }
 
-        Assert.That(tree.Count, Is.EqualTo(count));
+        await Assert.That(tree.Count).IsEqualTo(count);
 
         int currentMin = 0;
         currentExpectedCount = count;
@@ -144,38 +148,35 @@ public class RemoveTest
             currentExpectedCount--;
 
             bool removeResult = tree.RemoveMin(out KeyValuePair<Ref<int>, Ref<int>> min);
-            Assert.That(removeResult, Is.EqualTo(true));
-            Assert.That(tree.Count, Is.EqualTo(currentExpectedCount));
-            Assert.That(min.Key, Is.EqualTo(new Ref<int>(currentMin)));
-            Assert.That(min.Value, Is.EqualTo(new Ref<int>(currentMin)));
+            await Assert.That(removeResult).IsTrue();
+            await Assert.That(tree.Count).IsEqualTo(currentExpectedCount);
+            await Assert.That(min.Key).IsEqualTo(new Ref<int>(currentMin));
+            await Assert.That(min.Value).IsEqualTo(new Ref<int>(currentMin));
 
             bool getResult = tree.Get(min.Key, out Ref<int> _);
 
-            Assert.That(getResult, Is.EqualTo(false));
+            await Assert.That(getResult).IsFalse();
 
             currentMin++;
         }
     }
 
-    public static IEnumerable TestCases
+    public static IEnumerable<object[]> GetTestCases()
     {
-        get
-        {
-            ushort[] degrees = [3, 4, 5, 6];
-            int[] counts = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 90, 900];
-            bool[] reverseOrders = [false, true];
-            bool[] randomOrders = [false, true];
+        ushort[] degrees = [3, 4, 5, 6];
+        int[] counts = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 90, 900];
+        bool[] reverseOrders = [false, true];
+        bool[] randomOrders = [false, true];
 
-            foreach (ushort degree in degrees)
+        foreach (ushort degree in degrees)
+        {
+            foreach (int count in counts)
             {
-                foreach (int count in counts)
+                foreach (bool reverseOrder in reverseOrders)
                 {
-                    foreach (bool reverseOrder in reverseOrders)
+                    foreach (bool randomOrder in randomOrders)
                     {
-                        foreach (bool randomOrder in randomOrders)
-                        {
-                            yield return new TestCaseData(degree, count, reverseOrder, randomOrder);
-                        }
+                        yield return new object[] { degree, count, reverseOrder, randomOrder };
                     }
                 }
             }

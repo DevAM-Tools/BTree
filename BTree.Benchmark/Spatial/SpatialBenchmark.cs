@@ -1,6 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
-using BTree.Test.BTree.Spatial;
+using BTree.Spatial.Test;
 using System;
 using System.Linq;
 
